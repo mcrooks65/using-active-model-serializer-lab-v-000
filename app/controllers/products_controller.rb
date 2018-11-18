@@ -1,38 +1,31 @@
-class ProductsController < ApplicationController
-  def index
-    @products = Product.all
-  end
+<h1>Products</h1>
+<% @products.each do |product| %>
+  <h3><%= product.name %></h3>
+  <div id="product-<%= product.id %>"><%= truncate(product.description) %></div>
+  <button class="js-more" data-id="<%= product.id %>">More Info</button>
+  <ul id="product-<%= product.id %>-orders">
+  </ul>
+<% end %>
 
-  def inventory
-    product = Product.find(params[:id])
-    render plain: product.inventory > 0 ? true : false
-  end
-
-  def description
-    product = Product.find(params[:id])
-    render plain: product.description
-  end
-
-  def new
-    @product = Product.new
-  end
-
-  def create
-    Product.create(product_params)
-    redirect_to products_path
-  end
-
-  def show
-    @product = Product.find(params[:id])
-    respond_to do |format|
-      format.html { render :show }
-      format.json { render json: @product.to_json(only: [:id, :name, :description, :price, :inventory])}
-    end
-  end
-
-  private
-
-  def product_params
-    params.require(:product).permit(:name, :description, :inventory, :price)
-  end
-end
+<script type="text/javascript" charset="utf-8">
+$(function() {
+  $(".js-more").on("click", function() {
+    var id = $(this).data("id");
+    $.get("/products/" + id + ".json", function(data) {
+      var product = data;
+      var inventoryText = "<strong>Available</strong>";
+      if(product["inventory"] === 0){
+        inventoryText = "<strong>Sold Out</strong>";
+      }
+      var descriptionText = "<p>" + product["description"] + "</p><p>" + inventoryText + "</p>";
+      $("#product-" + id).html(descriptionText);
+      var orders = product["orders"];
+      var orderList = "";
+      orders.forEach(function(order) {
+        orderList += '<li class="js-order" data-id="' + order["id"] + '">' + order["id"] + ' - ' + order["created_at"] + '</li>';
+      });
+      $("#product-" + id + "-orders").html(orderList);
+    });
+  });
+});
+</script>
